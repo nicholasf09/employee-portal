@@ -1,8 +1,19 @@
 'use client'
 
+import { useActionState } from 'react'
 import { login } from '@/actions/auth'
 
+type AuthState = { error?: string }
+
 export default function LoginPage() {
+  const [state, formAction, pending] = useActionState(
+    async (_prev: AuthState | undefined, formData: FormData): Promise<AuthState> => {
+      const res = await login(formData)
+      return res ?? {}
+    },
+    undefined
+  )
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-md rounded-2xl border border-blue-100 bg-white/90 p-8 shadow-lg shadow-blue-100/60">
@@ -11,7 +22,7 @@ export default function LoginPage() {
           Masuk untuk melihat dashboard.
         </p>
 
-        <form action={login} className="mt-6 space-y-4">
+        <form action={formAction} className="mt-6 space-y-4">
           <div className="space-y-1">
             <label className="text-sm font-medium text-slate-600">Email</label>
             <input
@@ -34,7 +45,17 @@ export default function LoginPage() {
             />
           </div>
 
-          <LoginButton />
+          {state?.error ? (
+            <p className="text-sm text-red-600">{state.error}</p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={pending}
+            className="w-full rounded-xl bg-blue-600 text-white py-2.5 font-medium shadow-md shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {pending ? 'Masuk...' : 'Login'}
+          </button>
         </form>
 
         <p className="text-sm mt-4 text-slate-500">
@@ -45,33 +66,5 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
-  )
-}
-
-import { useActionState } from 'react'
-
-function LoginButton() {
-  const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string } | undefined, formData: FormData) => {
-      const res = await login(formData)
-      return res ?? {}
-    },
-    undefined
-  )
-
-  return (
-    <>
-      {state?.error ? (
-        <p className="text-sm text-red-600">{state.error}</p>
-      ) : null}
-
-      <button
-        formAction={formAction}
-        disabled={pending}
-        className="w-full rounded-xl bg-blue-600 text-white py-2.5 font-medium shadow-md shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {pending ? 'Masuk...' : 'Login'}
-      </button>
-    </>
   )
 }

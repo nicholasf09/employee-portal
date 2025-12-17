@@ -1,8 +1,19 @@
 'use client'
 
+import { useActionState } from 'react'
 import { register } from '@/actions/auth'
 
+type RegisterState = { error?: string }
+
 export default function RegisterPage() {
+  const [state, formAction, pending] = useActionState(
+    async (_prev: RegisterState | undefined, formData: FormData): Promise<RegisterState> => {
+      const res = await register(formData)
+      return res ?? {}
+    },
+    undefined
+  )
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-md rounded-2xl border border-blue-100 bg-white/90 p-8 shadow-lg shadow-blue-100/60">
@@ -11,7 +22,7 @@ export default function RegisterPage() {
           Buat akun untuk akses portal.
         </p>
 
-        <form action={register} className="mt-6 space-y-4">
+        <form action={formAction} className="mt-6 space-y-4">
           <div className="space-y-1">
             <label className="text-sm font-medium text-slate-600">Email</label>
             <input
@@ -34,10 +45,17 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* Error dari Server Action via searchParams TIDAK wajib.
-             Cara paling sederhana: pakai return object + useActionState.
-             Tapi kalau dosen tidak minta useActionState, kamu bisa tetap pakai versi yang robust di bawah. */}
-          <RegisterButton />
+          {state?.error ? (
+            <p className="text-sm text-red-600">{state.error}</p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={pending}
+            className="w-full rounded-xl bg-blue-600 text-white py-2.5 font-medium shadow-md shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {pending ? 'Mendaftar...' : 'Register'}
+          </button>
         </form>
 
         <p className="text-sm mt-4 text-slate-500">
@@ -48,34 +66,5 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
-  )
-}
-
-import { useActionState } from 'react'
-
-function RegisterButton() {
-  // Trick: re-bind action supaya kita bisa tampilkan error tanpa client-side auth logic
-  const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string } | undefined, formData: FormData) => {
-      const res = await register(formData)
-      return res ?? {}
-    },
-    undefined
-  )
-
-  return (
-    <>
-      {state?.error ? (
-        <p className="text-sm text-red-600">{state.error}</p>
-      ) : null}
-
-      <button
-        formAction={formAction}
-        disabled={pending}
-        className="w-full rounded-xl bg-blue-600 text-white py-2.5 font-medium shadow-md shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {pending ? 'Mendaftar...' : 'Register'}
-      </button>
-    </>
   )
 }
